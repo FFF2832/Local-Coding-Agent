@@ -34,11 +34,22 @@ Benchmarks and setup in this repo were run on the following hardware (adjust the
 
 ### Reference: model size vs. VRAM requirements
 
-![Model size, quantized size, and minimum VRAM per Gemma4 variant](images2/model-vram-reference.png)
+| Version | Parameters | Size (Q4) | Minimum VRAM | Best fit |
+|---|---|---|---|---|
+| E2B | 2B | 2.5 GB | CPU-only viable | Raspberry Pi, low-end laptops, edge devices |
+| E4B | 4B | 9.6 GB | 8 GB | Entry-level pick, M1/M2 Mac, lightweight laptops |
+| 26B | 26B (MoE, 3.8B active) | 18 GB | 12 GB (or 24GB+ RAM) | Best balance for mainstream desktops |
+| 31B | 31B (Dense) | 19 GB | 24 GB | High-end machines: RTX 4090 / A6000 / Mac Studio |
 
 ### Reference: recommended model by hardware tier
 
-![Recommended Gemma4 model and context window by hardware tier, from a MacBook Air M1 to a Mac Studio M3 Ultra](images2/hardware-tier-recommendation.png)
+| Hardware tier | Recommended model | Context |
+|---|---|---|
+| MacBook Air M1 16GB | gemma4:e4b | 16K |
+| RTX 3060 12GB | gemma4:26b (Q4) | 16K-32K |
+| RTX 3070 Ti / 4070 (8-12GB) | gemma4:26b (Q4) | 32K |
+| RTX 4080 / 4090 (16-24GB) | gemma4:31b | 64K |
+| Mac Studio M3 Ultra 128GB | gemma4:31b Q8 | 128K+ |
 
 ## Tech Stack
 
