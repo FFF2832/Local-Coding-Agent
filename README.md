@@ -1,10 +1,10 @@
 # Local-Coding-Agent
 
-Building a fully local, offline-capable AI coding agent from scratch: automated setup, MCP tool integration, official Claude Skills support, model benchmarking, and (optionally) remote access from a desktop client.
+Building a fully local coding agent from scratch: automated setup, MCP tool integration,Skills support, model benchmarking, and (optionally) remote access from a desktop client.
 
 ## Overview
 
-This project documents and automates the process of turning a bare Linux machine with a GPU into a working local coding agent. It uses [OpenCode](https://github.com/sst/opencode) as the agent runtime, [Ollama](https://ollama.com) to serve local LLMs (Gemma, Llama, etc.), MCP (Model Context Protocol) servers for tool-calling against real systems, and Anthropic's official Skills format for teaching the agent domain-specific workflows.
+This project documents and automates the process of turning a bare Linux machine with a GPU into a working local coding agent. It uses [OpenCode](https://github.com/sst/opencode) as the agent runtime, [Ollama](https://ollama.com) to serve local LLMs (Gemma, Llama, etc.), MCP (Model Context Protocol) servers for tool-calling against real systems, and Skills for teaching the agent domain-specific workflows.
 
 ## Architecture
 
@@ -57,7 +57,7 @@ Benchmarks and setup in this repo were run on the following hardware (adjust the
 |---|---|
 | Agent runtime | OpenCode (`opencode-ai` npm package) |
 | Local inference | Ollama |
-| Models tested | Gemma4 (26B / 31B), Llama 3.1 (70B, quantized) |
+| Models tested | Gemma4 (26B / 31B), Llama 3.1 (70B, q2) |
 | Tool-calling | MCP (Model Context Protocol) |
 | Agent knowledge / workflows | Anthropic Skills format |
 | Benchmarking | Python 3 (standard library only, no pip installs needed) |
@@ -210,12 +210,25 @@ Search "\<system name\> mcp" (e.g. "node-red mcp"). Watch the direction carefull
 - Keep working files out of `/tmp` (can be cleared unexpectedly). Use a dedicated folder under your home directory instead.
 
 ## 5. Remote Access & Permission Control
+OpenCode splits into a server and client: `opencode serve` (or `opencode web`) runs on the GPU machine and stays resident via a systemd service, while client connect over the LAN through a browser, the TUI (`opencode attach`), or the Desktop app, without needing a GPU or any local model on their own machine.
+ 
+```bash
+opencode web --hostname 0.0.0.0 --port 4096
+```
+ 
+**Multi-department isolation** is layered on top using plain Linux mechanisms, not a built-in OpenCode permission system: each department gets its own Linux account, its own home folder (`chmod 750`), its own systemd service on a dedicated port, and its own `OPENCODE_SERVER_PASSWORD`. Without that password, anyone who can reach the port can get the agent to read/write anything that department's account has access to, so the password is the one real gate in this setup, not optional.
+ 
+| Layer | Purpose |
+|---|---|
+| Dedicated Linux account | Determines whose permissions the OpenCode process runs as |
+| Dedicated folder (750) | Restricts which files are visible; other departments' folders aren't |
+| Dedicated systemd service + port | Routes each department to its own isolated instance |
+| Dedicated password | Gates the connection itself |
+ 
+A shared **Samba folder** per department doubles as both the OpenCode working directory and a Windows network drive, so files dropped in by a teammate are immediately readable by the agent, and files the agent generates are immediately visible to the teammate, no separate upload/download step.
+ 
+**Known issue:** the Desktop app's "Add Server" dialog has a bug where it can get locked if the server already has a password set (community-reported, e.g. GitHub issue #9066). Workaround: temporarily disable the password, add the server, then re-enable the password and set it via the "Edit Server" screen instead.
 
-*(To be completed. This section covers connecting to the agent from the OpenCode Desktop client and setting up password-based access control. Add the specific setup steps here: how the server side is exposed, how the desktop client is pointed at it, and how the password/permission gate is implemented.)*
-
-## Status
-
-Actively evolving. Speed/latency benchmarking is complete; accuracy benchmarking (both multiple-choice and LeetCode-style coding tasks) is in progress. MCP integration demonstrated with Node-RED as the reference case; the pattern generalizes to other MCP-compatible systems.
 
 ## References
 
